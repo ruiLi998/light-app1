@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/light-icon-192.png">
+    <link rel="apple-touch-icon" href="icons/light-icon-192.png">
+    <title>智能照明</title>
+    <style>
+        /* 重置默认样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 光源区域 */
+        .light-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 30px;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            margin-top: -8px;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            transition: background-color 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="light-area"></div>
+    <div class="control-panel">
+        <div class="slider-container">
+            <label class="slider-label">亮度</label>
+            <input type="range" id="brightness" min="0" max="100" value="50">
+        </div>
+        <div class="slider-container">
+            <label class="slider-label">色温</label>
+            <input type="range" id="temperature" min="0" max="100" value="50">
+        </div>
+        <button id="fullscreenBtn" class="fullscreen-btn">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M3 3h4v2H5v2H3V3zm4 14H3v-4h2v2h2v2zm10-4h-2v2h-2v2h4v-4zm-2-8h2v4h-2V5h-2V3h2v2z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const brightnessSlider = document.getElementById('brightness');
+        const temperatureSlider = document.getElementById('temperature');
+        const body = document.body;
+
+        function updateLight() {
+            const brightness = brightnessSlider.value;
+            const temperature = temperatureSlider.value;
+            
+            // 将色温值转换为实际的色彩（从暖色调��冷色调）
+            const warmColor = [255, 214, 170];  // 暖色调
+            const coldColor = [214, 214, 255];  // 冷色调
+            
+            // 计算色温
+            const r = Math.round(warmColor[0] + (coldColor[0] - warmColor[0]) * temperature / 100);
+            const g = Math.round(warmColor[1] + (coldColor[1] - warmColor[1]) * temperature / 100);
+            const b = Math.round(warmColor[2] + (coldColor[2] - warmColor[2]) * temperature / 100);
+            
+            // 使用亮度值直接调整RGB值
+            const brightnessMultiplier = brightness / 100;
+            const finalR = Math.round(r * brightnessMultiplier);
+            const finalG = Math.round(g * brightnessMultiplier);
+            const finalB = Math.round(b * brightnessMultiplier);
+            
+            // 使用rgb而不是rgba
+            body.style.backgroundColor = `rgb(${finalR}, ${finalG}, ${finalB})`;
+        }
+
+        brightnessSlider.addEventListener('input', updateLight);
+        temperatureSlider.addEventListener('input', updateLight);
+        
+        // 初始化
+        updateLight();
+
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        // 切换全屏
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                // 进入全屏
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                // 退出全屏
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // 监听全屏按钮点击
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+        // 监听全屏变化更新按钮图标
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fullscreenBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 8V3h5v2H5v3H3zm5 9H3v-5h2v3h3v2zm9-5h-2v-3h-3V3h5v5zm-3 5v-2h3v-3h2v5h-5z"/>
+                    </svg>
+                `;
+            } else {
+                fullscreenBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 3h4v2H5v2H3V3zm4 14H3v-4h2v2h2v2zm10-4h-2v2h-2v2h4v-4zm-2-8h2v4h-2V5h-2V3h2v2z"/>
+                    </svg>
+                `;
+            }
+        });
+
+        // 添加屏幕方向锁定（可选）
+        screen.orientation.lock('portrait').catch(err => {
+            console.log('Screen orientation lock failed:', err);
+        });
+
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/light-app/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // 添加安装提示
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // 可以在这里添加自定义安装提示UI
+        });
+    </script>
+</body>
+</html> 
